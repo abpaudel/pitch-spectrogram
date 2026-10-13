@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Pitch Spectrogram</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main id="stage">
+    <canvas id="gl"></canvas>
+    <canvas id="overlay"></canvas>
+  </main>
+
+  <button id="menu" type="button" aria-label="Options">⋮</button>
+
+  <section id="options" hidden>
+    <h2>Options</h2>
+    <label>Analysis Sensitivity
+      <select id="opt-sensitivity">
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+    </label>
+    <label>Analysis Rate
+      <select id="opt-rate">
+        <option value="0">Low</option>
+        <option value="1">Medium</option>
+        <option value="2">High</option>
+      </select>
+    </label>
+    <label>Sample Rate
+      <select id="opt-quality">
+        <option value="0">11025 Hz</option>
+        <option value="1">22050 Hz</option>
+        <option value="2">44100 Hz</option>
+      </select>
+    </label>
+    <label>Note names
+      <select id="opt-naming">
+        <option value="sharps">Sharps</option>
+        <option value="flats">Flats</option>
+        <option value="mixed">C♯ E♭ F♯ G♯ B♭</option>
+      </select>
+    </label>
+    <label>Calibration (A4, Hz)
+      <input id="opt-ref" type="number" min="420" max="460" step="0.5">
+    </label>
+    <button id="opt-close" type="button">OK</button>
+  </section>
+
+  <div id="start" role="button" tabindex="0">
+    <h1>Pitch Spectrogram</h1>
+    <p>Tap to start the microphone</p>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
