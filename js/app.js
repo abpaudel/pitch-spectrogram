@@ -125,6 +125,44 @@ function bindOptions() {
   }
 }
 
+// Full screen, holding a screen wake lock while in it. The lock is dropped
+// by the browser whenever the page is hidden, so it is re-requested on return.
+let wakeLock = null;
+
+const fullscreenElement = () => document.fullscreenElement || document.webkitFullscreenElement;
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator) || wakeLock || document.visibilityState !== 'visible') return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch { /* refused, e.g. by a battery saver */ }
+}
+
+function bindFullscreen() {
+  const button = document.getElementById('fullscreen');
+  const root = document.documentElement;
+  const enter = root.requestFullscreen || root.webkitRequestFullscreen;
+  const exit = document.exitFullscreen || document.webkitExitFullscreen;
+  if (!enter) return;                   // e.g. iPhone Safari: button stays hidden
+  button.hidden = false;
+  button.addEventListener('click', () => {
+    const p = fullscreenElement() ? exit.call(document) : enter.call(root);
+    Promise.resolve(p).catch((err) => console.error(err));
+  });
+  const onChange = () => {
+    const on = !!fullscreenElement();
+    button.querySelector('.fs-enter').hidden = on;
+    button.querySelector('.fs-exit').hidden = !on;
+    button.setAttribute('aria-label', on ? 'Exit full screen' : 'Enter full screen');
+    if (on) requestWakeLock();
+    else if (wakeLock) wakeLock.release();
+  };
+  document.addEventListener('fullscreenchange', onChange);
+  document.addEventListener('webkitfullscreenchange', onChange);
+  document.addEventListener('visibilitychange', () => { if (fullscreenElement()) requestWakeLock(); });
+}
+
 document.getElementById('start').addEventListener('click', () => {
   start().catch((err) => {
     const el = document.getElementById('start');
@@ -134,4 +172,5 @@ document.getElementById('start').addEventListener('click', () => {
   });
 });
 bindOptions();
+bindFullscreen();
 requestAnimationFrame(frame);
