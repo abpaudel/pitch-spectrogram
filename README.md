@@ -14,6 +14,7 @@ Live demo is hosted at: https://abpaudel.com/pitch-spectrogram/.
 left and each pitch class drawn in its own hue. Every octave is folded into
 one row band, so a trace's height shows its pitch class and the row label
 shows the octave it was last heard in.
+![](img/spectrogram-demo.jpg)
 
 ## How it works
 
