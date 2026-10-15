@@ -122,17 +122,20 @@ async function start(auto = false) {
   view.clear();
   octaves = new Int8Array(12).fill(-1);
   worker = new Worker('js/worker.js', { type: 'module' });
-  worker.onmessage = (e) => { view.addColumn(e.data.col); octaves = e.data.octaves; heard(e.data.col); };
+  worker.onmessage = (e) => {
+    audioRunning();
+    view.addColumn(e.data.col); octaves = e.data.octaves; heard(e.data.col);
+  };
   worker.postMessage({ type: 'init', sampleRate: ctx.sampleRate, port: ch.port2, settings }, [ch.port2]);
   startEl.hidden = true;
   // Without a user gesture (auto start) the browser may keep audio
-  // suspended; resume() then waits until the first tap or key press.
-  if (ctx.state !== 'running') {
-    const resumed = ctx.resume();
-    await Promise.race([resumed, new Promise((r) => setTimeout(r, 300))]);
+  // suspended; it then resumes on the first tap or key press.
+  ctx.onstatechange = () => { if (ctx.state === 'running') audioRunning(); };
+  if (ctx.state === 'running') audioRunning();
+  else {
+    ctx.resume().catch(() => {});
+    resumeOnGesture(ctx);
   }
-  if (ctx.state === 'running') watchSilence();
-  else waitForTap(ctx);
 }
 
 function showStartScreen() {
@@ -140,17 +143,24 @@ function showStartScreen() {
   startButton.disabled = false;
 }
 
-const tapEl = document.getElementById('tap');
+let running = false;
+let tapResume = null;
 
-function waitForTap(ctx) {
-  tapEl.hidden = false;
-  const go = () => {
-    removeEventListener('pointerdown', go);
-    removeEventListener('keydown', go);
-    ctx.resume().then(() => { tapEl.hidden = true; watchSilence(); });
-  };
-  addEventListener('pointerdown', go);
-  addEventListener('keydown', go);
+function resumeOnGesture(ctx) {
+  tapResume = () => { ctx.resume().catch(() => {}); };
+  addEventListener('pointerdown', tapResume);
+  addEventListener('keydown', tapResume);
+}
+
+// Audio is flowing: the context reported running, or analysis frames arrived.
+function audioRunning() {
+  if (running) return;
+  running = true;
+  if (tapResume) {
+    removeEventListener('pointerdown', tapResume);
+    removeEventListener('keydown', tapResume);
+  }
+  watchSilence();
 }
 
 // Hint shown if nothing has been picked up 5 s after starting; hidden for

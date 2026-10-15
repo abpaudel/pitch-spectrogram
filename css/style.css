@@ -301,7 +301,7 @@ input[type="checkbox"] {
   #start .card { padding-top: 20px; gap: 8px; }
 }
 
-.toast {
+#silence {
   position: fixed;
   left: 50%;
   bottom: max(24px, env(safe-area-inset-bottom));
@@ -316,14 +316,5 @@ input[type="checkbox"] {
   text-align: center;
 }
 
-.toast[hidden] { display: none; }
+#silence[hidden] { display: none; }
 
-#tap {
-  bottom: auto;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  padding: 14px 24px;
-  border-radius: 999px;
-  font-size: 17px;
-  pointer-events: none;
-}
