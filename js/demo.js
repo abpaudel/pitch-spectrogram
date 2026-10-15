@@ -43,7 +43,10 @@ export class Demo {
     this.drift = 0;                                        // slow pitch wander, semitones
     this.prev = NaN;                                       // last drawn pitch in this phrase
     this.phraseLeft = 0;
-    this.octaves = new Int8Array(12).fill(-1);
+    // Every note is labeled from the start, as the real tracker labels each
+    // note from whatever octave the first frame's noise favors; sung notes
+    // then relabel their own row.
+    this.octaves = Int8Array.from({ length: 12 }, () => 1 + Math.floor(Math.random() * 5));
     this.newNote();
   }
 

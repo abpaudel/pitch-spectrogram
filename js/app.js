@@ -31,6 +31,9 @@ const glCanvas = document.getElementById('gl');
 const overlay = document.getElementById('overlay');
 const view = new SpectrogramView(glCanvas, overlay);
 let octaves = new Int8Array(12).fill(-1);
+// The analysis worker is created on load so its modules are fetched and
+// ready by the time Start is pressed; worker is set once it is started.
+const analysis = new Worker('js/worker.js', { type: 'module' });
 let worker = null;
 
 // Landing-page demo: prefilled so the screen starts full, then advanced
@@ -121,7 +124,7 @@ async function start(auto = false) {
   demo = null;
   view.clear();
   octaves = new Int8Array(12).fill(-1);
-  worker = new Worker('js/worker.js', { type: 'module' });
+  worker = analysis;
   worker.onmessage = (e) => {
     audioRunning();
     view.addColumn(e.data.col); octaves = e.data.octaves; heard(e.data.col);
