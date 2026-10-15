@@ -1,4 +1,5 @@
 :root {
+  color-scheme: dark;                   /* native checkboxes, pickers and spinners */
   --font: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
   --bg: #000;
   --panel: #1a1a1a;
@@ -92,7 +93,6 @@ html, body {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   display: grid;
   gap: 14px;
-  color-scheme: dark;                   /* native pickers and spinners */
 }
 
 #options[hidden] { display: none; }
@@ -110,7 +110,7 @@ html, body {
   font-size: 14px;
 }
 
-#options select, #options input {
+#options select, #options input[type="number"] {
   width: 100%;
   font: 16px var(--font);
   color: var(--text-strong);
@@ -133,9 +133,24 @@ html, body {
 
 #options select option { background: #1a1a1a; }
 
-#options select:focus-visible, #options input:focus-visible {
+#options select:focus-visible, #options input[type="number"]:focus-visible {
   outline: 2px solid #a64dff;
   outline-offset: 1px;
+}
+
+#options label.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
 #options button {
@@ -164,11 +179,11 @@ html, body {
   touch-action: pan-y;
 }
 
-#start[hidden], #start [hidden] { display: none; }
+#start[hidden], #start [hidden], .auto-start #start { display: none; }
 
 #start .card {
   margin: auto;                         /* centered, but scrollable when taller than the screen */
-  width: min(480px, 100%);
+  width: min(460px, 100%);
   padding: 28px 24px 20px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 24px;
@@ -244,6 +259,14 @@ html, body {
   font-size: 15px;
 }
 
+#start .skip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
 #start .hint {
   margin: 0;
   font-size: 14px;
@@ -278,7 +301,7 @@ html, body {
   #start .card { padding-top: 20px; gap: 8px; }
 }
 
-#silence {
+.toast {
   position: fixed;
   left: 50%;
   bottom: max(24px, env(safe-area-inset-bottom));
@@ -293,4 +316,14 @@ html, body {
   text-align: center;
 }
 
-#silence[hidden] { display: none; }
+.toast[hidden] { display: none; }
+
+#tap {
+  bottom: auto;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 14px 24px;
+  border-radius: 999px;
+  font-size: 17px;
+  pointer-events: none;
+}

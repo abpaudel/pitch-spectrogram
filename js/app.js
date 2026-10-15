@@ -9,7 +9,7 @@ const NAMINGS = {
 };
 
 // Analysis Rate Medium: 43 columns/s, about 6 s on screen.
-const DEFAULTS = { sensitivity: 'medium', rate: 1, quality: 1, ref: 440, naming: 'sharps' };
+const DEFAULTS = { sensitivity: 'medium', rate: 1, quality: 1, ref: 440, naming: 'sharps', startScreen: true };
 const STRING_SETTINGS = new Set(['sensitivity', 'naming']);
 
 function loadSettings() {
@@ -84,7 +84,9 @@ function showStartError(message) {
   startButton.lastChild.textContent = 'Try Again';
 }
 
-async function start() {
+// auto: started on load because the start screen is turned off. Any
+// failure then just shows the start screen instead of an error.
+async function start(auto = false) {
   startButton.disabled = true;
   startStatus.hidden = true;
   let stream;
@@ -93,7 +95,8 @@ async function start() {
       audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 },
     });
   } catch (err) {
-    showStartError('Microphone access was denied. Allow it for this page, then try again.');
+    if (auto) showStartScreen();
+    else showStartError('Microphone access was denied. Allow it for this page, then try again.');
     return;
   }
   const ctx = new AudioContext();
@@ -118,12 +121,36 @@ async function start() {
   demo = null;
   view.clear();
   octaves = new Int8Array(12).fill(-1);
-  watchSilence();
   worker = new Worker('js/worker.js', { type: 'module' });
   worker.onmessage = (e) => { view.addColumn(e.data.col); octaves = e.data.octaves; heard(e.data.col); };
   worker.postMessage({ type: 'init', sampleRate: ctx.sampleRate, port: ch.port2, settings }, [ch.port2]);
-  if (ctx.state === 'suspended') await ctx.resume();
   startEl.hidden = true;
+  // Without a user gesture (auto start) the browser may keep audio
+  // suspended; resume() then waits until the first tap or key press.
+  if (ctx.state !== 'running') {
+    const resumed = ctx.resume();
+    await Promise.race([resumed, new Promise((r) => setTimeout(r, 300))]);
+  }
+  if (ctx.state === 'running') watchSilence();
+  else waitForTap(ctx);
+}
+
+function showStartScreen() {
+  document.documentElement.classList.remove('auto-start');
+  startButton.disabled = false;
+}
+
+const tapEl = document.getElementById('tap');
+
+function waitForTap(ctx) {
+  tapEl.hidden = false;
+  const go = () => {
+    removeEventListener('pointerdown', go);
+    removeEventListener('keydown', go);
+    ctx.resume().then(() => { tapEl.hidden = true; watchSilence(); });
+  };
+  addEventListener('pointerdown', go);
+  addEventListener('keydown', go);
 }
 
 // Hint shown if nothing has been picked up 5 s after starting; hidden for
@@ -180,6 +207,19 @@ function bindOptions() {
   for (const [k, el] of Object.entries(fields)) el.value = String(settings[k]);
   document.getElementById('menu').addEventListener('click', () => { panel.hidden = !panel.hidden; });
   document.getElementById('opt-close').addEventListener('click', () => { panel.hidden = true; });
+  // Start screen: "Don't show this again" on the card, "Show Start Screen"
+  // in Options. Main thread only, like naming.
+  const skip = document.getElementById('skip-start');
+  const show = document.getElementById('opt-start-screen');
+  const setStartScreen = (on) => {
+    settings.startScreen = on;
+    skip.checked = !on;
+    show.checked = on;
+    saveSettings(settings);
+  };
+  setStartScreen(settings.startScreen);
+  skip.addEventListener('change', () => setStartScreen(!skip.checked));
+  show.addEventListener('change', () => setStartScreen(show.checked));
   for (const [k, el] of Object.entries(fields)) {
     el.addEventListener('change', () => {
       let v = STRING_SETTINGS.has(k) ? el.value : Number(el.value);
@@ -242,6 +282,7 @@ startButton.addEventListener('click', () => {
 bindOptions();
 bindFullscreen();
 bindInstall();
+if (!settings.startScreen) start(true).catch(() => showStartScreen());
 requestAnimationFrame(frame);
 
 // Offline support (sw.js). Needs localhost or HTTPS, like the microphone.

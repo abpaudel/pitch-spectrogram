@@ -33,6 +33,14 @@
   <meta name="theme-color" content="#000000">
 
   <link rel="stylesheet" href="css/style.css">
+  <script>
+    // Hide the start screen before first paint when "Don't show this again" is set.
+    try {
+      if (JSON.parse(localStorage.getItem('pitch-spectrogram') || '{}').startScreen === false) {
+        document.documentElement.classList.add('auto-start');
+      }
+    } catch { /* storage unavailable */ }
+  </script>
 </head>
 <body>
   <main id="stage">
@@ -79,6 +87,7 @@
     <label>Calibration (A4, Hz)
       <input id="opt-ref" type="number" min="420" max="460" step="0.5">
     </label>
+    <label class="check"><input id="opt-start-screen" type="checkbox"> Show Start Screen</label>
     <button id="opt-close" type="button">OK</button>
   </section>
 
@@ -92,6 +101,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
         Start Spectrogram
       </button>
+      <label class="skip"><input id="skip-start" type="checkbox"> Don't show this again</label>
       <button id="install" class="secondary" type="button" hidden>Install App</button>
       <p id="install-ios" class="hint" hidden>To install, tap <b>Share</b> then <b>Add to Home Screen</b>.</p>
       <ul class="how">
@@ -104,7 +114,8 @@
     </div>
   </div>
 
-  <div id="silence" role="status" hidden>Sing or play something… If nothing shows up, check that the right microphone is selected and not muted.</div>
+  <div id="tap" class="toast" role="status" hidden>Tap anywhere to start</div>
+  <div id="silence" class="toast" role="status" hidden>Sing or play something… If nothing shows up, check that the right microphone is selected and not muted.</div>
 
   <script type="module" src="js/app.js"></script>
 </body>
