@@ -1,7 +1,7 @@
 {
   "name": "Pitch Spectrogram",
   "short_name": "Pitch Spectrogram",
-  "description": "A live, octave-wrapped pitch spectrogram: see the notes you sing or play, colour-coded by pitch class.",
+  "description": "A live, octave-wrapped pitch spectrogram: see the notes you sing or play, color-coded by pitch class.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

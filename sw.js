@@ -11,6 +11,7 @@ const FILES = [
   'css/style.css',
   'js/app.js',
   'js/capture-worklet.js',
+  'js/demo.js',
   'js/dsp.js',
   'js/view.js',
   'js/worker.js',

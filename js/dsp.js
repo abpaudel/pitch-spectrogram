@@ -71,7 +71,7 @@ export class Analyzer {
     this.fft = makeFFT(N);
     this.re = new Float64Array(N); this.im = new Float64Array(N);
 
-    // Harmonic offsets in bins, quantised to 1/65536 of a bin.
+    // Harmonic offsets in bins, quantized to 1/65536 of a bin.
     this.offq = new Int32Array(H);
     let hsum = 0;
     for (let h = 1; h <= H; h++) { this.offq[h - 1] = Math.floor(12 * bps * Math.log2(h) * 65536 + 0.5); hsum += 1 / h; }
@@ -107,7 +107,7 @@ export class Analyzer {
   }
 
   // Tuning reference (440 Hz by default). The
-  // per-bin salience normaliser depends on it.
+  // per-bin salience normalizer depends on it.
   setReference(ref) {
     this.ref = ref;
     const B = this.B, Bw = new Float64Array(B);
@@ -133,7 +133,7 @@ export class Analyzer {
   }
 
   // 16-tap Gaussian, weight exp(-((j - p) * pi/8)^2),
-  // normalised over the taps; values below ~1e-4 of the maximum are skipped.
+  // normalized over the taps; values below ~1e-4 of the maximum are skipped.
   splat(pos, val, out) {
     const B = this.B, buf = this.S.splat, w = this.splatW;
     buf.fill(0);

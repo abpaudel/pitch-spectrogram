@@ -3,7 +3,7 @@
 //
 // The display is a ring-buffer texture of 256 columns x 384 rows
 // (12 semitones x 32 sub-rows). Each analysis frame writes one column:
-// pixel = rowColour * level, alpha 255. The texture is drawn as a single
+// pixel = rowColor * level, alpha 255. The texture is drawn as a single
 // quad with LINEAR filtering and REPEAT wrap, offset so that the newest
 // column sits at the right edge. Guide lines and note labels are drawn on
 // top.
@@ -28,20 +28,20 @@ function hsv2rgb(h, s, v) {
   }
 }
 
-// Note colours, C..B: hue = ((n + 3) % 12) / 12, S 0.7, V 1.
-export const NOTE_COLOURS = Array.from({ length: 12 }, (_, n) =>
+// Note colors, C..B: hue = ((n + 3) % 12) / 12, S 0.7, V 1.
+export const NOTE_COLORS = Array.from({ length: 12 }, (_, n) =>
   hsv2rgb(((n + 3) % 12) / 12, 0.7, 1.0));
 
-// Per-row RGBA8 colours: row r sits at
-// semitone r/32 - 0.5 above C, colours interpolated between neighbours.
-function buildRowColours() {
+// Per-row RGBA8 colors: row r sits at
+// semitone r/32 - 0.5 above C, colors interpolated between neighbors.
+function buildRowColors() {
   const out = new Uint8Array(ROWS * 3);
   for (let r = 0; r < ROWS; r++) {
     let s = r / SUBROWS - 0.5;
     while (s < 0) s += 12;
     s %= 12;
     const i = Math.floor(s), f = s - i;
-    const a = NOTE_COLOURS[i % 12], b = NOTE_COLOURS[(i + 1) % 12];
+    const a = NOTE_COLORS[i % 12], b = NOTE_COLORS[(i + 1) % 12];
     for (let c = 0; c < 3; c++) {
       const x = (a[c] + (b[c] - a[c]) * f) * 255 + 0.5;
       out[r * 3 + c] = Math.max(0, Math.min(255, x | 0));
@@ -66,7 +66,7 @@ export class SpectrogramView {
     this.glCanvas = glCanvas;
     this.overlay = overlayCanvas;
     this.ctx = overlayCanvas.getContext('2d');
-    this.rowColours = buildRowColours();
+    this.rowColors = buildRowColors();
     this.writeCol = 0;
     this.column = new Uint8Array(TEX_H * 4);   // rows >= ROWS stay black
     this.initGL();
@@ -112,7 +112,7 @@ export class SpectrogramView {
 
   // levels: ROWS values, Q15 integers 0..32767.
   addColumn(levels) {
-    const px = this.column, rc = this.rowColours;
+    const px = this.column, rc = this.rowColors;
     for (let i = 0; i < ROWS; i++) {
       const l = levels[i];
       px[i * 4] = (rc[i * 3] * l) >> 15;
@@ -163,7 +163,7 @@ export class SpectrogramView {
     const fontPx = 12 * unit;
     const xLabel = 0;
     const xLine = xLabel + 12 * unit;
-    // Soft-edged lines: full width = lw, alpha fading from the centre to
+    // Soft-edged lines: full width = lw, alpha fading from the center to
     // both edges.
     const softLine = (y, width, rgb, alpha) => {
       const g = ctx.createLinearGradient(0, y - width / 2, 0, y + width / 2);
@@ -186,7 +186,7 @@ export class SpectrogramView {
       const text = labels ? labels(k, notation) : null;
       if (!text) continue;
       const y = h * (1 - (k + 0.5) / 12);
-      // Drawn twice: black outline, then grey fill.
+      // Drawn twice: black outline, then gray fill.
       ctx.lineWidth = Math.max(2, unit * 1.5);
       ctx.strokeStyle = '#000';
       ctx.strokeText(text, xLabel + unit, y);

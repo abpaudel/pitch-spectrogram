@@ -1,4 +1,5 @@
-import { SpectrogramView } from './view.js';
+import { SpectrogramView, COLS } from './view.js';
+import { Demo, DEMO_RATE } from './demo.js';
 
 // Note spellings ("Note names" option). The default is sharps only.
 const NAMINGS = {
@@ -32,6 +33,14 @@ const view = new SpectrogramView(glCanvas, overlay);
 let octaves = new Int8Array(12).fill(-1);
 let worker = null;
 
+// Landing-page demo: prefilled so the screen starts full, then advanced
+// in real time by frame() until the microphone starts.
+let demo = new Demo();
+const demoTime = performance.now();
+let demoCols = 0;
+for (let i = 0; i < COLS; i++) view.addColumn(demo.column());
+octaves = demo.octaves;
+
 // Label text: letter, octave digit, then the accidental glyph.
 function label(pc) {
   const oct = octaves[pc];
@@ -47,6 +56,11 @@ function resize() {
 }
 
 function frame() {
+  if (demo) {
+    const due = Math.floor((performance.now() - demoTime) * DEMO_RATE / 1000);
+    if (due - demoCols > 10) demoCols = due - 1;     // skip ahead after the tab was hidden
+    for (; demoCols < due; demoCols++) view.addColumn(demo.column());
+  }
   resize();
   view.draw(label, settings.naming);
   requestAnimationFrame(frame);
@@ -59,17 +73,27 @@ async function loadWorklet(ctx) {
   return Promise.race([load, timeout]);
 }
 
+const startEl = document.getElementById('start');
+const startButton = document.getElementById('start-button');
+const startStatus = document.getElementById('start-status');
+
+function showStartError(message) {
+  startStatus.textContent = message;
+  startStatus.hidden = false;
+  startButton.disabled = false;
+  startButton.lastChild.textContent = 'Try Again';
+}
+
 async function start() {
-  const startEl = document.getElementById('start');
-  startEl.querySelector('p').textContent = 'Starting…';
+  startButton.disabled = true;
+  startStatus.hidden = true;
   let stream;
   try {
     stream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 },
     });
   } catch (err) {
-    startEl.querySelector('h1').textContent = 'Microphone Access Denied';
-    startEl.querySelector('p').textContent = 'Allow microphone access for this page, then tap to try again.';
+    showStartError('Microphone access was denied. Allow it for this page, then try again.');
     return;
   }
   const ctx = new AudioContext();
@@ -91,11 +115,57 @@ async function start() {
     src.connect(node);
     node.connect(mute).connect(ctx.destination);
   }
+  demo = null;
+  view.clear();
+  octaves = new Int8Array(12).fill(-1);
+  watchSilence();
   worker = new Worker('js/worker.js', { type: 'module' });
-  worker.onmessage = (e) => { view.addColumn(e.data.col); octaves = e.data.octaves; };
+  worker.onmessage = (e) => { view.addColumn(e.data.col); octaves = e.data.octaves; heard(e.data.col); };
   worker.postMessage({ type: 'init', sampleRate: ctx.sampleRate, port: ch.port2, settings }, [ch.port2]);
   if (ctx.state === 'suspended') await ctx.resume();
   startEl.hidden = true;
+}
+
+// Hint shown if nothing has been picked up 5 s after starting; hidden for
+// good once a clearly visible column arrives.
+const silenceEl = document.getElementById('silence');
+let gotSignal = false;
+
+function watchSilence() {
+  setTimeout(() => { if (!gotSignal) silenceEl.hidden = false; }, 5000);
+}
+
+function heard(col) {
+  if (gotSignal) return;
+  for (let i = 0; i < col.length; i++) {
+    if (col[i] > 8000) { gotSignal = true; silenceEl.hidden = true; return; }
+  }
+}
+
+// Install: Chromium browsers fire beforeinstallprompt when the app can be
+// installed, so the button only appears then. iOS has no such API, so it
+// gets a Share-menu hint instead. Neither shows once running installed.
+function bindInstall() {
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (standalone) return;
+  const button = document.getElementById('install');
+  let prompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    prompt = e;
+    button.hidden = false;
+  });
+  button.addEventListener('click', async () => {
+    if (!prompt) return;
+    prompt.prompt();
+    await prompt.userChoice;
+    prompt = null;
+    button.hidden = true;
+  });
+  window.addEventListener('appinstalled', () => { button.hidden = true; });
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (ios) document.getElementById('install-ios').hidden = false;
 }
 
 function bindOptions() {
@@ -163,16 +233,15 @@ function bindFullscreen() {
   document.addEventListener('visibilitychange', () => { if (fullscreenElement()) requestWakeLock(); });
 }
 
-document.getElementById('start').addEventListener('click', () => {
+startButton.addEventListener('click', () => {
   start().catch((err) => {
-    const el = document.getElementById('start');
-    el.querySelector('h1').textContent = 'Audio Error!';
-    el.querySelector('p').textContent = String(err && err.message || err);
+    showStartError('Audio error: ' + String(err && err.message || err));
     console.error(err);
   });
 });
 bindOptions();
 bindFullscreen();
+bindInstall();
 requestAnimationFrame(frame);
 
 // Offline support (sw.js). Needs localhost or HTTPS, like the microphone.
