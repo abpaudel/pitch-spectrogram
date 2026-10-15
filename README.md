@@ -1,4 +1,8 @@
-# Pitch Spectrogram
+<p align="center">
+  <img src="img/icons/icon.svg" width="128" alt="Pitch Spectrogram icon">
+</p>
+
+<h1 align="center">Pitch Spectrogram</h1>
 
 A live, octave-wrapped pitch spectrogram that works locally on the browser.
 
