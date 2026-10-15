@@ -174,3 +174,6 @@ document.getElementById('start').addEventListener('click', () => {
 bindOptions();
 bindFullscreen();
 requestAnimationFrame(frame);
+
+// Offline support (sw.js). Needs localhost or HTTPS, like the microphone.
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
