@@ -7,8 +7,8 @@
 A live, octave-wrapped pitch spectrogram that works locally on the browser.
 
 Serve the folder with any static web server (microphone access needs
-`localhost` or HTTPS), for example `python3 -m http.server`, then tap to
-start.
+`localhost` or HTTPS), for example `python3 -m http.server`, then press
+**Start Spectrogram**.
 
 Live demo is hosted at: https://abpaudel.com/pitch-spectrogram/.
 
@@ -28,7 +28,7 @@ shows the octave it was last heard in.
   suppression, then the 8 octaves are folded into one (maximum).
 - A 30 dB level gate scales each column by the input loudness.
 - The display is a 256 x 384 ring-buffer texture: one column per analysis
-  frame, pixel = row colour x level.
+  frame, pixel = row color x level.
 
 ## Files
 
@@ -38,7 +38,8 @@ shows the octave it was last heard in.
 | `js/worker.js` | Resampling, framing, octave label tracking |
 | `js/view.js` | WebGL ring-buffer texture, guide lines, labels |
 | `js/capture-worklet.js` | Microphone capture (ScriptProcessor fallback in `app.js`) |
-| `js/app.js` | Wiring, options, persistence |
+| `js/demo.js` | Synthetic columns for the landing-page background |
+| `js/app.js` | Wiring, start screen, options, persistence, install |
 
 ## Options
 
@@ -46,7 +47,7 @@ shows the octave it was last heard in.
   before the level gate).
 - **Analysis Rate**: Low, Medium or High (21.5, 43 or 86 columns per second).
 - **Sample Rate**: 11025, 22050 or 44100 Hz.
-- **Note names**: sharps (default), flats, or C♯ E♭ F♯ G♯ B♭.
+- **Note Names**: sharps (default), flats, or C♯ E♭ F♯ G♯ B♭.
 - **Calibration**: the A4 reference frequency.
 
 The button below the menu toggles full screen and keeps the screen awake
