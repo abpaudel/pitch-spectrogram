@@ -37,12 +37,19 @@ const analysis = new Worker('js/worker.js', { type: 'module' });
 let worker = null;
 
 // Landing-page demo: prefilled so the screen starts full, then advanced
-// in real time by frame() until the microphone starts.
-let demo = new Demo();
-const demoTime = performance.now();
+// in real time by frame() until the microphone starts. Skipped when the
+// start screen is off, so analysis is the first thing shown.
+let demo = null;
+let demoTime = 0;
 let demoCols = 0;
-for (let i = 0; i < COLS; i++) view.addColumn(demo.column());
-octaves = demo.octaves;
+
+function startDemo() {
+  demo = new Demo();
+  demoTime = performance.now();
+  demoCols = 0;
+  for (let i = 0; i < COLS; i++) view.addColumn(demo.column());
+  octaves = demo.octaves;
+}
 
 // Label text: letter, octave digit, then the accidental glyph.
 function label(pc) {
@@ -144,6 +151,7 @@ async function start(auto = false) {
 function showStartScreen() {
   document.documentElement.classList.remove('auto-start');
   startButton.disabled = false;
+  startDemo();
 }
 
 let running = false;
@@ -295,7 +303,8 @@ startButton.addEventListener('click', () => {
 bindOptions();
 bindFullscreen();
 bindInstall();
-if (!settings.startScreen) start(true).catch(() => showStartScreen());
+if (settings.startScreen) startDemo();
+else start(true).catch(() => showStartScreen());
 requestAnimationFrame(frame);
 
 // Offline support (sw.js). Needs localhost or HTTPS, like the microphone.
