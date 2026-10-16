@@ -248,6 +248,7 @@ function bindOptions() {
       settings[k] = v;
       el.value = String(v);
       saveSettings(settings);
+      if (k === 'naming') view.dirty = true;     // redraw labels
       if (k !== 'naming' && worker) {
         if (k === 'quality' || k === 'rate') view.clear();
         worker.postMessage({ type: 'settings', settings });

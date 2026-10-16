@@ -1,7 +1,6 @@
-// Service worker for offline use. Network first, so an online visit
-// always gets the latest files; the cache is only the fallback. Every
-// successful response for a file in FILES refreshes its cached copy, and
-// activation drops cached entries no longer listed in FILES.
+// Service worker for offline use. Stale-while-revalidate: cached files
+// are served immediately and refreshed in the background, so updates
+// appear on the next visit. Activation drops entries not in FILES.
 
 const CACHE = 'pitch-spectrogram';
 const FILES = [
@@ -39,12 +38,17 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
-  e.respondWith(fetch(req, { cache: 'no-cache' }).then((res) => {
+  // no-store: a revalidated fetch can return a stale HTTP cache entry.
+  const network = fetch(req, { cache: 'no-store' }).then((res) => {
     if (res.ok && URLS.has(req.url)) {
       const copy = res.clone();
-      e.waitUntil(caches.open(CACHE).then((c) => c.put(req, copy)));
+      return caches.open(CACHE).then((c) => c.put(req, copy)).then(() => res);
     }
     return res;
-  }).catch(() => caches.match(req, { ignoreSearch: true })
-    .then((hit) => hit || (req.mode === 'navigate' ? caches.match('./') : Response.error()))));
+  });
+  e.waitUntil(network.then(() => {}, () => {}));
+  e.respondWith(caches.match(req, { ignoreSearch: true })
+    .then((hit) => hit || network)
+    .catch(() => (req.mode === 'navigate' ? caches.match('./') : Response.error()))
+    .then((res) => res || Response.error()));
 });

@@ -77,7 +77,7 @@ class OctaveTracker {
 }
 
 let fsIn = 48000, settings = null, analyzer = null, resampler = null, tracker = new OctaveTracker();
-let ring = null, frameBuf = null, ringPos = 0, ringFill = 0, sinceFrame = 0, hop = 0;
+let ring = null, frameBuf = null, ringPos = 0, sinceFrame = 0, hop = 0;
 
 function configure() {
   const div = QUALITY_DIV[settings.quality];
@@ -86,8 +86,9 @@ function configure() {
   if (!analyzer || analyzer.N !== N) analyzer = new Analyzer(N, fs, settings.ref);
   else if (analyzer.ref !== settings.ref) analyzer.setReference(settings.ref);
   resampler = new Resampler(fsIn, fs);
+  // The ring starts as silence, so the first frame runs after one hop.
   ring = new Float64Array(N); frameBuf = new Float64Array(N);
-  ringPos = 0; ringFill = 0; sinceFrame = 0;
+  ringPos = 0; sinceFrame = 0;
   hop = hopBase / RATE_DIV[settings.rate];
 }
 
@@ -98,8 +99,7 @@ function onSamples(x) {
   for (let i = 0; i < y.length; i++) {
     ring[ringPos] = y[i];
     ringPos = (ringPos + 1) % N;
-    if (ringFill < N) ringFill++;
-    if (++sinceFrame >= hop && ringFill === N) { sinceFrame = 0; runFrame(); }
+    if (++sinceFrame >= hop) { sinceFrame = 0; runFrame(); }
   }
 }
 

@@ -69,6 +69,8 @@ export class SpectrogramView {
     this.rowColors = buildRowColors();
     this.writeCol = 0;
     this.column = new Uint8Array(TEX_H * 4);   // rows >= ROWS stay black
+    // True when the picture changed; draw() does nothing otherwise.
+    this.dirty = true;
     this.initGL();
   }
 
@@ -108,6 +110,7 @@ export class SpectrogramView {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, COLS, TEX_H, 0, gl.RGBA, gl.UNSIGNED_BYTE,
       new Uint8Array(COLS * TEX_H * 4));
     this.writeCol = 0;
+    this.dirty = true;
   }
 
   // levels: ROWS values, Q15 integers 0..32767.
@@ -124,15 +127,18 @@ export class SpectrogramView {
     gl.bindTexture(gl.TEXTURE_2D, this.tex);
     gl.texSubImage2D(gl.TEXTURE_2D, 0, this.writeCol, 0, 1, TEX_H, gl.RGBA, gl.UNSIGNED_BYTE, px);
     this.writeCol = (this.writeCol + 1) % COLS;
+    this.dirty = true;
   }
 
   resize(w, h) {
     for (const c of [this.glCanvas, this.overlay]) {
-      if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+      if (c.width !== w || c.height !== h) { c.width = w; c.height = h; this.dirty = true; }
     }
   }
 
   draw(labels, notation) {
+    if (!this.dirty) return;
+    this.dirty = false;
     const gl = this.gl, w = this.glCanvas.width, h = this.glCanvas.height;
     gl.viewport(0, 0, w, h);
     gl.clearColor(0, 0, 0, 1);
